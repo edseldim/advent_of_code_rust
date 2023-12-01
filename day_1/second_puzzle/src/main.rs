@@ -94,9 +94,8 @@ fn main() {
     for line in fs::read_to_string(file_path).unwrap().lines() {
         file_lines.push(line.to_string());
     };
-    // println!("{:?}",file_lines);
+
     let mut processed_lines = retrieve_calibration_values_from_vec(file_lines.clone());
-    println!("{:?}",processed_lines);
 
     let mut total_sum = 0;
     for numbers_in_vector in processed_lines{
