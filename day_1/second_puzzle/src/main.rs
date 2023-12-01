@@ -28,7 +28,7 @@ fn retrieve_calibration_values_from_vec(vec_ref: Vec<String>) -> Vec<Vec<(i32, S
 
 }
 
-fn find_max_value(vec: Vec<(i32,String)>) -> (i32, String) {
+fn get_max_value_from_vec(vec: Vec<(i32,String)>) -> (i32, String) {
     let mut max_pos = -1;
     let mut max_value = String::from("None");
     for (i, (pos, number)) in vec.iter().enumerate(){
@@ -47,7 +47,7 @@ fn find_max_value(vec: Vec<(i32,String)>) -> (i32, String) {
 
 }
 
-fn find_min_value(vec: Vec<(i32,String)>) -> (i32, String) {
+fn get_min_value_from_vec(vec: Vec<(i32,String)>) -> (i32, String) {
     let mut min_pos = -1;
     let mut min_value = String::from("None");
     for (i, (pos, number)) in vec.iter().enumerate(){
@@ -81,7 +81,7 @@ fn retrieve_value_from_str(number_str: String) -> i32{
             "seven" => 7,
             "eight" => 8,
             "nine" => 9,
-            &_ => 0
+            _ => 0
         }
     }
 }
@@ -101,12 +101,13 @@ fn main() {
     let mut total_sum = 0;
     for numbers_in_vector in processed_lines{
         if numbers_in_vector.len() == 1{
-            let processed_number = dbg!(retrieve_value_from_str(numbers_in_vector[0].1.clone())*10+retrieve_value_from_str(numbers_in_vector[0].1.clone()));
+            let first_value = retrieve_value_from_str(numbers_in_vector[0].1.clone());
+            let processed_number = dbg!(first_value*10+first_value);
             println!("{}",processed_number);
             total_sum += processed_number;
         }else{
-            let first_value = find_min_value(numbers_in_vector.clone()).1;
-            let last_value = find_max_value(numbers_in_vector.clone()).1;
+            let first_value = get_min_value_from_vec(numbers_in_vector.clone()).1;
+            let last_value = get_max_value_from_vec(numbers_in_vector.clone()).1;
             println!("{} and {} detected!", first_value, last_value);
             let processed_number = dbg!(retrieve_value_from_str(first_value) * 10 + retrieve_value_from_str(last_value));
             println!("{}",processed_number);
