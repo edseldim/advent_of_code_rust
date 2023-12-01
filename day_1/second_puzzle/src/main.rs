@@ -1,4 +1,3 @@
-use std::env;
 use std::fs;
 
 fn retrieve_calibration_values_from_vec(vec_ref: Vec<String>) -> Vec<Vec<(i32, String)>> {
@@ -7,12 +6,22 @@ fn retrieve_calibration_values_from_vec(vec_ref: Vec<String>) -> Vec<Vec<(i32, S
         let mut numbers_in_string = Vec::new();
         /* Extracting words as digits */
         for number_str in vec!["one","two","three","four","five","six","seven","eight","nine"]{
-            let found_number: (i32,String) = match string.find(number_str) {
+            let found_number_first: (i32,String) = match string.find(number_str) {
                                     Some(start_num) => (start_num as i32, number_str.to_string()),
                                     None => (-1,String::from("None"))
                                 };
-            if found_number.0 != -1 {
-                numbers_in_string.push(found_number)
+
+            let found_number_last: (i32,String) = match string.rfind(number_str) {
+                Some(start_num) => (start_num as i32, number_str.to_string()),
+                None => (-1,String::from("None"))
+            };
+
+            if found_number_first.0 != -1 {
+            numbers_in_string.push(found_number_first)
+            }
+
+            if found_number_last.0 != -1 {
+                numbers_in_string.push(found_number_last)
             }
         }
         /* Extracting Digits */
@@ -98,10 +107,12 @@ fn main() {
     let mut processed_lines = retrieve_calibration_values_from_vec(file_lines.clone());
 
     let mut total_sum = 0;
-    for numbers_in_vector in processed_lines{
+    for (i, numbers_in_vector) in processed_lines.iter().enumerate(){
+        println!("iteration {i}");
         if numbers_in_vector.len() == 1{
-            let first_value = retrieve_value_from_str(numbers_in_vector[0].1.clone());
-            let processed_number = dbg!(first_value*10+first_value);
+            let unique_value = retrieve_value_from_str(numbers_in_vector[0].1.clone());
+            println!("{} detected!", unique_value);
+            let processed_number = dbg!(unique_value*10+unique_value);
             println!("{}",processed_number);
             total_sum += processed_number;
         }else{
