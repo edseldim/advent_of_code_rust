@@ -81,15 +81,15 @@ fn main() {
         file_lines.push(line.to_string());
     };
 
-    let mut valid_ids_sum: i32 = 0;
+    let mut round_powers_sum: i32 = 0;
     for line in file_lines {
         let line_processed = line.split(":").collect::<Vec<_>>()[1].to_string();
         let min_dist =  get_min_dist(line_processed);
-        valid_ids_sum += min_dist.red as i32 * min_dist.blue as i32 * min_dist.green as i32;
+        round_powers_sum += min_dist.red as i32 * min_dist.blue as i32 * min_dist.green as i32;
 
     };
 
-    println!("Total amount of valid round is {}", valid_ids_sum);
+    println!("Total amount of power rounds is {}", round_powers_sum);
 
 
 
