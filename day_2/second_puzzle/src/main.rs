@@ -12,8 +12,7 @@ struct game_round {
 impl game_round {
     fn compare_max_and_assign(&mut self, other_game_round: &game_round) -> game_round {
         for cube_color in vec!["red","green","blue"] {
-            if (self[cube_color] < other_game_round[cube_color])
-                || (self[cube_color] == 0){
+            if (self[cube_color] < other_game_round[cube_color]){
                 self[cube_color] = other_game_round[cube_color];
             }
         }
