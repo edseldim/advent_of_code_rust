@@ -81,12 +81,6 @@ fn main() {
         file_lines.push(line.to_string());
     };
 
-    let rules = game_round {
-        red: 12,
-        green: 13,
-        blue: 14
-    };
-
     let mut valid_ids_sum: i32 = 0;
     for line in file_lines {
         let line_processed = line.split(":").collect::<Vec<_>>()[1].to_string();
