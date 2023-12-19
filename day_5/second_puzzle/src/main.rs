@@ -103,7 +103,7 @@ fn main() {
     let mut seeds_dst: Vec<i64> = vec![];
     for (i, start_rng_seed) in src_seeds.iter().enumerate() {
         if i % 2 == 0 {
-            for mut src in start_rng_seed.clone()..start_rng_seed.clone()+src_seeds[i+1].clone()
+            for (mut j, mut src) in (start_rng_seed.clone()..start_rng_seed.clone()+src_seeds[i+1].clone()).enumerate()
             {
                 // src = *rng_seed as i64;
                 // seeds_path.push(vec![src.clone()]);
@@ -119,16 +119,17 @@ fn main() {
                     }
                     // seeds_path[i].push(src.clone());
                 }
-                if i > 31{
-                    seeds_dst[i%32] = src.clone();
+                if j > (10000-1){
+                    seeds_dst[j%10000] = src.clone();
                 } else {
                     seeds_dst.push(src.clone())
                 }
 
-                if i % 32 == 0{
+                if j % 10000 == 0{
                     let current_min = *seeds_dst.iter().min().unwrap() as i64;
-                    if current_min < current_min_batch {
+                    if current_min < current_min_batch || current_min_batch < 0{
                         current_min_batch = current_min;
+                        println!("Current minima: {current_min}");
                     }
                     
                 }
