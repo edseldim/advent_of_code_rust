@@ -97,6 +97,7 @@ fn main() {
 
     /* find locations */
 
+    let buffer_batch = 10000;
     let mut src = 0;
     let mut current_min_batch = -1;
     // let mut seeds_path = vec![];
