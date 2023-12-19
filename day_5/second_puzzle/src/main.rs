@@ -98,14 +98,15 @@ fn main() {
     /* find locations */
 
     let mut src = 0;
-    let mut seeds_path = vec![];
-    let mut seeds_dst = vec![];
+    let mut current_min_batch = -1;
+    // let mut seeds_path = vec![];
+    let mut seeds_dst: Vec<i64> = vec![];
     for (i, start_rng_seed) in src_seeds.iter().enumerate() {
         if i % 2 == 0 {
             for mut src in start_rng_seed.clone()..start_rng_seed.clone()+src_seeds[i+1].clone()
             {
                 // src = *rng_seed as i64;
-                seeds_path.push(vec![src.clone()]);
+                // seeds_path.push(vec![src.clone()]);
                 for map_info in &file_maps {
                     for range_info in &map_info.maps {
                         // src => 98
@@ -116,15 +117,27 @@ fn main() {
                             break;
                         }
                     }
-                    seeds_path[i].push(src.clone());
+                    // seeds_path[i].push(src.clone());
                 }
-                seeds_dst.push(src.clone());
+                if i > 31{
+                    seeds_dst[i%32] = src.clone();
+                } else {
+                    seeds_dst.push(src.clone())
+                }
+
+                if i % 32 == 0{
+                    let current_min = *seeds_dst.iter().min().unwrap() as i64;
+                    if current_min < current_min_batch {
+                        current_min_batch = current_min;
+                    }
+                    
+                }
             }
         }
     }
 
-    println!("sources {:?} \ndestinations: {:?}",src_seeds, seeds_dst);
-    println!("min location in destinations is: {}", seeds_dst.iter().min().unwrap())
+    // println!("sources {:?} \ndestinations: {:?}",src_seeds, seeds_dst);
+    println!("min location in destinations is: {}", current_min_batch)
     
 
     
