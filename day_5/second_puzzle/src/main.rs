@@ -120,13 +120,13 @@ fn main() {
                     }
                     // seeds_path[i].push(src.clone());
                 }
-                if j > (10000-1){
-                    seeds_dst[j%10000] = src.clone();
+                if j > (buffer_batch-1){
+                    seeds_dst[j%buffer_batch] = src.clone();
                 } else {
                     seeds_dst.push(src.clone())
                 }
 
-                if j % 10000 == 0{
+                if j % buffer_batch == 0{
                     let current_min = *seeds_dst.iter().min().unwrap() as i64;
                     if current_min < current_min_batch || current_min_batch < 0{
                         current_min_batch = current_min;
