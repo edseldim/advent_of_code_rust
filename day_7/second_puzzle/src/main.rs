@@ -10,22 +10,44 @@ struct Hand {
     score: i64,
 }
 
-fn classify_hand_dist(hand_dist: &Vec<(u8)>) -> String {
-    if hand_dist.len() == 1 {
+fn classify_hand_dist(hand_dist_raw: &Vec<(String, u8)>) -> String {
+
+    let mut amt_jokers = 0;
+
+    let mut has_joker = 0;
+
+    if hand_dist_raw.iter().filter(|x| x.0 == "J").map(|x| x.1).collect::<Vec<_>>().len() > 0{
+        amt_jokers = hand_dist_raw
+                        .iter()
+                        .filter(|x| x.0 == "J")
+                        .map(|x| x.1)
+                        .collect::<Vec<u8>>()[0] as u8;
+
+        has_joker = 1;
+    }
+
+    let hand_letter_dist_numbers = hand_dist_raw
+                                    .iter()
+                                    .filter(|x| x.0 != "J")
+                                    .map(|x| x.1)
+                                    .collect::<Vec<u8>>();
+
+    if (hand_letter_dist_numbers.len() as i32) == 1 || (hand_letter_dist_numbers.len() as i32) == 0{
         "five-o-kind".to_string()
-    } else if hand_dist.len() == 2 {
-        if *hand_dist.iter().max().unwrap() == 4 {
+    } else if (hand_letter_dist_numbers.len() as i32) == 2 {
+        println!("hand dist: {:?} max amt: {} amt jokers: {} has jokers: {}",hand_dist_raw, *hand_letter_dist_numbers.iter().max().unwrap(), amt_jokers, has_joker);
+        if *hand_letter_dist_numbers.iter().max().unwrap()+amt_jokers == 4 {
             "four-o-kind".to_string()
         } else {
             "full-house".to_string()
         }
-    } else if hand_dist.len() == 3 {
-        if *hand_dist.iter().max().unwrap() == 3 {
+    } else if (hand_letter_dist_numbers.len() as i32) == 3 {
+        if *hand_letter_dist_numbers.iter().max().unwrap()+amt_jokers == 3 {
             "three-o-kind".to_string()
         } else {
             "two-pair".to_string()
         }
-    } else if hand_dist.len() == 4 {
+    } else if (hand_letter_dist_numbers.len() as i32) == 4 {
         "one-pair".to_string()
     } else {
         "high-card".to_string()
@@ -53,17 +75,13 @@ fn parse_letter_dist(hand: &String) -> Vec<(String, u8)>{
 
 fn parse_hand_type(hand: &String) -> String{
     let hand_letter_dist = parse_letter_dist(hand);
-    let hand_letter_dist_numbers = hand_letter_dist
-                                    .iter()
-                                    .map(|x| x.1)
-                                    .collect::<Vec<u8>>();
-    classify_hand_dist(&hand_letter_dist_numbers)
+    classify_hand_dist(&hand_letter_dist)
     
 }
 
 fn calculate_score_letters(hand: &String) -> i64{
     let mut letter_value_map: HashMap<String, i64> = HashMap::new();
-    let cards = vec!["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"];
+    let cards = vec!["A", "K", "Q", "T", "9", "8", "7", "6", "5", "4", "3", "2", "J"];
     for (i, letter) in cards.iter().enumerate(){
         letter_value_map.insert(letter.to_string().clone(),(cards.len()-i) as i64);
     }
