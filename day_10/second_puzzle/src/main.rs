@@ -63,12 +63,12 @@ fn main() {
         compatible_connections: vec!["N".to_string(),"E".to_string(),"S".to_string(),"W".to_string()],
     });
     /* traversing the loop */
-    let mut loop_pipes: Vec<(i32, i32)> = vec![];
+    let mut loop_pipes: Vec<(i32, i32, char)> = vec![];
     for (row_num, row) in file_lines.iter().enumerate(){
         for (col_num, column) in row.chars().collect::<Vec<char>>().iter().enumerate(){
             if column.to_string() == "S"{
                 // println!("starting traversing node {:?} at ({},{})", column.to_string(), row_num, col_num);
-                let mut base:(i32, i32) = (row_num as i32, col_num as i32);
+                let mut base:(i32, i32, char) = (row_num as i32, col_num as i32,'S');
                 let mut base_node_conn = pipe_map[&column.to_string()].clone();
                 loop_pipes.push(base.clone());
                 let near_nodes = vec![(-1,0),(0,1),(1,0),(0,-1)]; /* top, right, bottom, left */
@@ -86,21 +86,39 @@ fn main() {
                             /* check it hasn't already been visited */
                             let is_already_visited = loop_pipes.iter().any(|visited_pipe| visited_pipe.0 == ref_base.0 && visited_pipe.1 == ref_base.1);
                             /* check the ref pipe could connect to the base one */
-                            let is_compatible = base_node_conn.compatible_connections.iter().any(|conn| current_pipe_conn.connections.contains(conn) && 
-                                                                                                        /* for instance, 'F-' (- connects from west) */
-                                                                                                        ((conn == "W" && ref_base.0 == base.0 && ref_base.1 > base.1)
-                                                                                                        /* for instance, '-J' (- connects from east) */
-                                                                                                        || (conn == "E" && ref_base.0 == base.0 && ref_base.1 < base.1)
-                                                                                                        /* for instance, 'F' (| connects from north) 
-                                                                                                                         '|'                           */
-                                                                                                        || (conn == "N" && ref_base.0 > base.0 && ref_base.1 == base.1)
-                                                                                                        /* for instance, '|' (| connects from south) 
-                                                                                                                         'J'                           */
-                                                                                                        || (conn == "S" && ref_base.0 < base.0 && ref_base.1 == base.1)
-                                                                                                        ));
+                            let mut is_compatible = false;
+                            let mut pipe_direction = 'S';
+                            for base_comp_conn in &base_node_conn.compatible_connections{
+                                if current_pipe_conn.connections.contains(base_comp_conn){
+                                    
+                                    /* for instance, 'F-' (- connects from west) */
+                                    if base_comp_conn == "W" && ref_base.0 == base.0 && ref_base.1 > base.1{
+                                        is_compatible = true;
+                                        pipe_direction = '←';
+                                    }
+                                    /* for instance, '-J' (- connects from east) */
+                                    else if (base_comp_conn == "E" && ref_base.0 == base.0 && ref_base.1 < base.1){
+                                        is_compatible = true;
+                                        pipe_direction = '→';
+                                    }
+                                    /* for instance, 'F' (| connects from north) 
+                                                     '|'                           */
+                                    else if (base_comp_conn == "N" && ref_base.0 > base.0 && ref_base.1 == base.1){
+                                        is_compatible = true;
+                                        pipe_direction = '↑';
+                                    }
+                                    /* for instance, '|' (| connects from south) 
+                                                     'J'                           */
+                                    else if (base_comp_conn == "S" && ref_base.0 < base.0 && ref_base.1 == base.1){
+                                        is_compatible = true;
+                                        pipe_direction = '↓';
+                                    }
+                                    
+                                }
+                            }
                             if is_already_visited == false && is_compatible == true{
                                 // println!("traversing to node {:?} at ({},{})",pipe_under_check,ref_base.0,ref_base.1);
-                                    base = (ref_base.0 as i32, ref_base.1 as i32);
+                                    base = (ref_base.0 as i32, ref_base.1 as i32, pipe_direction);
                                     base_node_conn = pipe_map[&file_lines[base.0 as usize].chars().collect::<Vec<char>>()[base.1 as usize].to_string()].clone();
                                     loop_pipes.push(base.clone());
                                     is_in_path = true;
@@ -125,7 +143,7 @@ fn main() {
         let mut row_to_draw: Vec<char> = vec![];
         for (col_num, column) in file_lines[row_num].chars().enumerate(){
             if loop_pipes.iter().any(|x| x.0==row_num as i32 && x.1==col_num as i32){
-                row_to_draw.push(column);
+                row_to_draw.push(loop_pipes.iter().filter(|x| x.0==row_num as i32 && x.1==col_num as i32).collect::<Vec<&(i32,i32,char)>>()[0].2.clone());
                 continue;
             }
             row_to_draw.push(' ');
@@ -133,45 +151,23 @@ fn main() {
         println!("{:?}",row_to_draw.iter().collect::<String>());
     }
 
-    /* checking points in loop 
+    /* Using shoelace formula for the area of the polygon and pick's theorem for the amount of nodes in loop.
     
-    To find which points are part of a closed curve, one can use Jordan's curve Theorem. 
+    Shoelace formula calculates the area which is not the same as the amount of nodes in loop because area takes into account
+    the shapes in the loop.
     
-    To sum it all up, if one draws a line from the point under evaluation to the outside of the grid and
-    counts how many times it touches the curve, then if it's odd, it's in otherwise it's outside*/
-
-    let mut total_loop_points = 0;
-    for (row_num, row) in file_lines.iter().enumerate(){
-        for (col_num, column) in file_lines[row_num].chars().enumerate(){
-            if loop_pipes.iter().any(|x| x.0==row_num as i32 && x.1==col_num as i32) == false{
-                println!("------------------ for {} at ({},{})",column, row_num, col_num);
-                println!("checking downwards");
-                let mut loop_cross_count_down = 0;
-                let mut loop_cross_count_up = 0;
-                for ref_row in 1..(file_lines.len()-row_num){
-                    let pipe_under_check = file_lines[ref_row+row_num].chars().collect::<Vec<char>>()[col_num].to_string();
-                    println!("checking tile {} at ({},{})", pipe_under_check, (row_num+ref_row), col_num);
-                    if loop_pipes.iter().any(|x| x.0==(row_num+ref_row) as i32 && x.1==(col_num as i32)){
-                        println!("match down! at ({},{})", (row_num+ref_row), col_num);
-                        loop_cross_count_down += 1;
-                    }
-                }
-                println!("checking upwards");
-                for ref_row in 1..row_num{
-                    let pipe_under_check = file_lines[((row_num as i32)-(ref_row as i32)) as usize].chars().collect::<Vec<char>>()[col_num].to_string();
-                    println!("checking tile {} at ({},{})", pipe_under_check, ((row_num as i32)-(ref_row as i32)), col_num);
-                    if loop_pipes.iter().any(|x| x.0==((row_num as i32)-(ref_row as i32)) as i32 && x.1==(col_num as i32)){
-                        println!("match up! at ({},{})", ((row_num as i32)-(ref_row as i32)), col_num);
-                        loop_cross_count_up += 1;
-                    }
-                }
-                if loop_cross_count_down%2 != 0 && loop_cross_count_up %2 != 0{
-                    total_loop_points += 1;
-                }
+    Pick's theorem uses border coordinates, the inner nodes in loop to find the area
+    */
+    loop_pipes.push(loop_pipes[0].clone());
+    let mut area_in_polygon: i32 = 0;
+    for i in 1..loop_pipes.len(){
+            if i >= 1 { /* 1: x and 0: y */
+                area_in_polygon += loop_pipes[i-1].0*loop_pipes[i].1 - loop_pipes[i].0*loop_pipes[i-1].1;
             }
-        }
     }
-    println!("the # of points in loop is {}", total_loop_points);
+    area_in_polygon = area_in_polygon/2;
+    let number_of_inner_points = area_in_polygon - ((loop_pipes.len()/2) as i32) + 1;
+    println!("Amount of tiles inside loop is: {}", number_of_inner_points);
 
 
 }
