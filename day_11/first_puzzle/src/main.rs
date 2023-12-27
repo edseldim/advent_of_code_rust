@@ -90,7 +90,7 @@ fn main() {
         // println!("calculating following distances: {:?}", target_galaxies);
         let valid_steps: Vec<(i32, i32)> = vec![(0,-1),(-1,0),(0,1),(1,0)]; /* left, up, right, bottom */
         for target_galaxy in &target_galaxies{
-            // println!("-------starting at {:?} (target: {:?})-------",galaxy, target_galaxy);
+            println!("-------starting at {:?} (target: {:?})-------",galaxy, target_galaxy);
             if !processed_distances.iter().any(|processed_dist| processed_dist.0 == target_galaxy.0 &&
                                                                 processed_dist.1 == target_galaxy.1 &&
                                                                 processed_dist.2 == galaxy.0 &&
@@ -115,7 +115,7 @@ fn main() {
                     // println!("optimal step: {:?}",base);
                     path_to_objective.push(base.clone());
                     if base.0 == target_galaxy.0 && base.1 == target_galaxy.1{
-                        // println!("-------it takes {} steps to get to target-------",path_to_objective.len());
+                        println!("-------it takes {} steps to get to target-------",path_to_objective.len());
                         optimal_path_steps.push(path_to_objective.len());
                         break;
                     }
