@@ -76,16 +76,25 @@ fn main() {
                         ok_windows +=1;
                     }
                     // forward checking
+                    let mut is_not_valid = false;
                     for next_window in &req_track_to_be_modified[1..]{
                         let mut start = next_window.1;
                         let mut end = next_window.2;
                         let sliding_window = record[start..=end].to_string();
+                        if sliding_window.contains(&"."){
+                            is_not_valid = true;
+                        }
                         record_windows.push(sliding_window.clone());
                         record_windows_metadata.push((start, end));
                         if sliding_window.chars().all(|x| x != '.'){
                             ok_windows +=1;
                         }
                     }
+
+                    if is_not_valid{
+                        break;
+                    }
+
                     // println!("checking... {:?}", record_windows);
                     let mut spring_row = record.chars().collect::<Vec<char>>();
                     let mut contiguous_pos = 0;
@@ -95,16 +104,13 @@ fn main() {
                             spring_row[spring] = '$';
                         } else if record_windows_metadata.iter().any(|x| x.0 <= spring && spring <= x.1) {
                             spring_row[spring] = 's';
+                            continue;
                         }else if spring_row[spring] == '?'{
                                 spring_row[spring] = '.';
                             }
                         }
                     
-                    // if spring_row.contains(&'s'){
-                    //     break;
-                    // }
-                    
-                    // println!("checking... {:?}", spring_row.iter().collect::<String>());
+                    println!("checking... {:?}", spring_row.iter().collect::<String>());
 
                     // if for some reason, a position is met again, then skip
                     if ok_combinations_cache.contains(&record_windows_metadata){
@@ -204,7 +210,7 @@ fn main() {
                                         req_track_to_be_modified[prev_pointer_shift].3 = req_track[prev_pointer_shift+1].1 - req_track_to_be_modified[prev_pointer_shift].2 - 1;
                                     }
                                 }
-                                // println!("new windows: {:?}", req_track_to_be_modified);
+                                println!("new windows: {:?}", req_track_to_be_modified);
                                 break;
                             }
                             // if second to last window has topped its available tiles, then move the last one
@@ -224,7 +230,7 @@ fn main() {
                                     req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
                                     req_track_to_be_modified[prev_pointer_shift].3 = req_track[prev_pointer_shift+1].1 - req_track_to_be_modified[prev_pointer_shift].2 - 1;
                                 }
-                                // println!("new head shift: {:?}", req_track_to_be_modified);
+                                println!("new head shift: {:?}", req_track_to_be_modified);
                                 break;
                             }       
                         }
