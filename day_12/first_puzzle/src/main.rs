@@ -1,58 +1,4 @@
-use combinations::Combinations;
-use std::collections::HashMap;
 use std::fs;
-
-fn get_total_combinatorics(req: Vec<usize>, sample: i32, unknown_part: Vec<usize>) -> usize {
-    let total_count = 0;
-    let mut number_req_passed = 0;
-    if sample as usize == unknown_part.len(){
-        return 1
-    }else{
-        let computed: Vec<_> = Combinations::new(unknown_part.clone(), sample as usize).collect();
-        for combination in computed{
-            // println!("Analyzing {:?}", combination);
-            let mut contiguous_pos = 0;
-            let mut last_number = 0;
-            let mut req_copy = req.clone();
-            for digit in &combination{
-                if contiguous_pos == 0{
-                    contiguous_pos += 1;
-                    last_number = *digit;
-                } else {
-                    if *digit == (last_number+1){
-                        contiguous_pos += 1;
-                        last_number = *digit;
-                    }
-                }
-                // println!("{} {}",last_number, contiguous_pos);
-                if req_copy.contains(&contiguous_pos){
-                    // println!("passed!");
-                    contiguous_pos = 0;
-                    let req_completed_idx = req_copy.iter().enumerate().filter(|x| x.0 == contiguous_pos).collect::<Vec<(usize, &usize)>>();
-                    if req_completed_idx.len() == 0{
-                        break;
-                    }
-                    req_copy.remove(req_completed_idx[0].0);
-
-                    if req_copy.len() == 0{
-                        number_req_passed += 1;
-                        break;
-                    }
-                }   
-            }
-        }
-    }
-    // if we are sampling just one number, no need for sequential cases correction
-    if sample == 1{
-        return number_req_passed;
-    }
-    // remove sequential cases
-    let mut last_result = number_req_passed as i32-(unknown_part.len() as i32 - sample + 1);
-    // if last_result == 0{
-    //     return 1;
-    // }
-    return last_result as usize
-}
 
 fn main() {
     
@@ -117,7 +63,7 @@ fn main() {
                     let sliding_window = record[start+next_tile..=end+next_tile].to_string();
                     record_windows.push(sliding_window.clone());
                     record_windows_metadata.push((start+next_tile, end+next_tile));
-                    if sliding_window.chars().any(|x| x=='.') == false{
+                    if sliding_window.chars().all(|x| x!='.'){
                         ok_windows +=1;
                     }
                     // forward checking
@@ -127,16 +73,32 @@ fn main() {
                         let sliding_window = record[start..=end].to_string();
                         record_windows.push(sliding_window.clone());
                         record_windows_metadata.push((start, end));
-                        if sliding_window.chars().any(|x| x == '.') == false{
+                        if sliding_window.chars().all(|x| x != '.'){
                             ok_windows +=1;
                         }
                     }
-                    println!("checking... {:?}", record_windows);
+                    // println!("checking... {:?}", record_windows);
+                    let mut spring_row = record.chars().collect::<Vec<char>>();
+                    let mut contiguous_pos = 0;
+                    for spring in 0..record.len(){
+                        if record_windows_metadata.iter().any(|x| x.0 <= spring && spring <= x.1)
+                            && spring_row[spring] != '.'{
+                            spring_row[spring] = '$';
+                        } else if record_windows_metadata.iter().any(|x| x.0 <= spring && spring <= x.1) {
+                            spring_row[spring] = 's';
+                        }else if spring_row[spring] == '?'{
+                                spring_row[spring] = '.';
+                            }
+                        }
+                    // println!("checking... {:?}", spring_row.iter().collect::<String>());
+                    // println!("ok amounts: {:?}", ok_windows);
+
                     // if for some reason, a position is met again, then skip
                     if ok_combinations_cache.contains(&record_windows_metadata){
                         println!("skipped... {:?}", record_windows_metadata);
                         continue;
                     }
+
                     // check there's no # in between windows
                     // check windows sections are not contiguous
                     let mut is_ok_in_between = true;
@@ -148,8 +110,10 @@ fn main() {
                             let current_start = window.0;
                             if prev_end + 1 == current_start{
                                 is_ok_in_between = false;
+                                continue;
                             }
                             let in_between_segm = record[prev_end+1..current_start].to_string();
+                            // println!("in between: {:?}", in_between_segm);
                             if in_between_segm.contains("#"){
                                 is_ok_in_between = false;
                             }
@@ -159,25 +123,31 @@ fn main() {
                         if i == 0 || i == record_windows_metadata.len()-1{
                             if i == 0 && window.0 > 0{
                                 let left_side_char = record.chars().collect::<Vec<char>>()[window.0-1].to_string();
+                                // println!("left side: {:?}", left_side_char);
                                 if left_side_char.contains("#"){
                                     is_ok_in_sides = false;
                                 }
                             }
-                            if i == 0 && window.1 < record.len()-1{
+                            if i == record_windows_metadata.len()-1 && window.1 < record.len()-1{
                                 let right_side_char = record.chars().collect::<Vec<char>>()[window.1+1].to_string();
+                                // println!("right side: {:?}", right_side_char);
                                 if right_side_char.contains("#"){
                                     is_ok_in_sides = false;
                                 }
                             }
                         }
                     }
-
+                    
                     // all windows correctness checking
                     if ok_windows == req_track_to_be_modified.len() 
                         && is_ok_in_between
                         && is_ok_in_sides
+                        && !spring_row.contains(&'#')
+                        // && spring_row.iter().collect::<String>().split(".").filter(|x| x.to_string().len() > 0).collect::<Vec<_>>().len() == req_track_to_be_modified.len() 
                     {
-                    
+                        
+                        // println!("{:?}", record_windows_metadata);
+                        println!("checking... {:?}", spring_row.iter().collect::<String>());
                         println!("match!");
                         ok_combinations += 1;
                         ok_combinations_cache.push(record_windows_metadata.clone());
@@ -186,39 +156,65 @@ fn main() {
 
                 // move next windows one by one
                 let mut has_reached_max = false;
-                for next_pointer_shift in 1..req_track_to_be_modified.len()-1{
-                    // if second to first position end is not next to the next window's start
-                    if req_track_to_be_modified[next_pointer_shift].2 + 1 < req_track_to_be_modified[next_pointer_shift+1].1{
-                        req_track_to_be_modified[next_pointer_shift].1 += 1;
-                        req_track_to_be_modified[next_pointer_shift].2 += 1;
-                        for prev_pointer_shift in 0..next_pointer_shift{
-                            req_track_to_be_modified[prev_pointer_shift].3 = req_track_to_be_modified[prev_pointer_shift+1].1 - req_track_to_be_modified[prev_pointer_shift].2 - 1;
-                        }
-                        println!("new windows: {:?}", req_track_to_be_modified);
-                        break;
+                if req_track_to_be_modified.len() == 2{
+                    if req_track_to_be_modified[1].2 + 1 == record.len(){
+                        has_reached_max = true;
                     }
-                    // if second to last window has topped its available tiles, then move the last one
-                    if next_pointer_shift + 1 == req_track_to_be_modified.len()-1{
-                        if req_track_to_be_modified[next_pointer_shift+1].2 + 1 == record.len(){
-                            has_reached_max = true;
+                    // reset to starting positions except for the head (last pointer)
+                    req_track_to_be_modified[1].1 += 1;
+                    req_track_to_be_modified[1].2 += 1;
+                    req_track[1].1 = req_track_to_be_modified[1].1;
+                    req_track[1].2 = req_track_to_be_modified[1].2;
+                    
+                    for prev_pointer_shift in 0..1{
+                        req_track_to_be_modified[prev_pointer_shift].1 = req_track[prev_pointer_shift].1;
+                        req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
+                        req_track_to_be_modified[prev_pointer_shift].3 = req_track[prev_pointer_shift+1].1 - req_track_to_be_modified[prev_pointer_shift].2 - 1;
+                    }
+                    // println!("new head shift: {:?}", req_track_to_be_modified);
+
+                } else {
+                    for next_pointer_shift in 1..=req_track_to_be_modified.len()-1{
+                        // if second to first position end is not next to the next window's start
+                        if req_track_to_be_modified[next_pointer_shift].2 + 1 < req_track_to_be_modified[next_pointer_shift+1].1{
+                            req_track_to_be_modified[next_pointer_shift].1 += 1;
+                            req_track_to_be_modified[next_pointer_shift].2 += 1;
+                            for prev_pointer_shift in 0..next_pointer_shift{
+                                if prev_pointer_shift + 1 == next_pointer_shift{
+                                    req_track_to_be_modified[prev_pointer_shift].1 = req_track[prev_pointer_shift].1;
+                                    req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
+                                    req_track_to_be_modified[prev_pointer_shift].3 = req_track_to_be_modified[prev_pointer_shift+1].1 - req_track_to_be_modified[prev_pointer_shift].2 - 1;
+                                } else {
+                                    req_track_to_be_modified[prev_pointer_shift].1 = req_track[prev_pointer_shift].1;
+                                    req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
+                                    req_track_to_be_modified[prev_pointer_shift].3 = req_track[prev_pointer_shift+1].1 - req_track_to_be_modified[prev_pointer_shift].2 - 1;
+                                }
+                            }
+                            // println!("new windows: {:?}", req_track_to_be_modified);
                             break;
                         }
-                        // reset to starting positions except for the head (last pointer)
-                        req_track_to_be_modified[next_pointer_shift+1].1 += 1;
-                        req_track_to_be_modified[next_pointer_shift+1].2 += 1;
-                        req_track[next_pointer_shift+1].1 = req_track_to_be_modified[next_pointer_shift+1].1;
-                        req_track[next_pointer_shift+1].2 = req_track_to_be_modified[next_pointer_shift+1].2;
-                        
-                        for prev_pointer_shift in 0..next_pointer_shift+1{
-                            req_track_to_be_modified[prev_pointer_shift].1 = req_track[prev_pointer_shift].1;
-                            req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
-                            req_track_to_be_modified[prev_pointer_shift].3 = req_track[prev_pointer_shift+1].1 - req_track_to_be_modified[prev_pointer_shift].2 - 1;
-                        }
-                        println!("new head shift: {:?}", req_track_to_be_modified);
-                        break;
-                    }       
+                        // if second to last window has topped its available tiles, then move the last one
+                        if next_pointer_shift + 1 == req_track_to_be_modified.len()-1{
+                            if req_track_to_be_modified[next_pointer_shift+1].2 + 1 == record.len(){
+                                has_reached_max = true;
+                                break;
+                            }
+                            // reset to starting positions except for the head (last pointer)
+                            req_track_to_be_modified[next_pointer_shift+1].1 += 1;
+                            req_track_to_be_modified[next_pointer_shift+1].2 += 1;
+                            req_track[next_pointer_shift+1].1 = req_track_to_be_modified[next_pointer_shift+1].1;
+                            req_track[next_pointer_shift+1].2 = req_track_to_be_modified[next_pointer_shift+1].2;
+                            
+                            for prev_pointer_shift in 0..next_pointer_shift+1{
+                                req_track_to_be_modified[prev_pointer_shift].1 = req_track[prev_pointer_shift].1;
+                                req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
+                                req_track_to_be_modified[prev_pointer_shift].3 = req_track[prev_pointer_shift+1].1 - req_track_to_be_modified[prev_pointer_shift].2 - 1;
+                            }
+                            // println!("new head shift: {:?}", req_track_to_be_modified);
+                            break;
+                        }       
+                    }
                 }
-                
                 // if all the record has been traversed, end
                 if has_reached_max == true{
                     break;
