@@ -91,11 +91,9 @@ fn main() {
                         }
                     }
 
-                    if is_not_valid{
-                        break;
-                    }
+                    
 
-                    // println!("checking... {:?}", record_windows);
+                    // format record with windows
                     let mut spring_row = record.chars().collect::<Vec<char>>();
                     let mut contiguous_pos = 0;
                     for spring in 0..record.len(){
@@ -104,19 +102,26 @@ fn main() {
                             spring_row[spring] = '$';
                         } else if record_windows_metadata.iter().any(|x| x.0 <= spring && spring <= x.1) {
                             spring_row[spring] = 's';
-                            continue;
+                            // continue;
                         }else if spring_row[spring] == '?'{
                                 spring_row[spring] = '.';
                             }
                         }
                     
-                    println!("checking... {:?}", spring_row.iter().collect::<String>());
+                    
 
                     // if for some reason, a position is met again, then skip
                     if ok_combinations_cache.contains(&record_windows_metadata){
-                        println!("skipped... {:?}", record_windows_metadata);
+                        // println!("skipped... {:?}", record_windows_metadata);
                         continue;
                     }
+
+                    if is_not_valid{
+                        // println!("skipped... {:?}", spring_row.iter().collect::<String>());
+                        break;
+                    }
+
+                    // println!("checking... {:?}", spring_row.iter().collect::<String>());
 
                     // check there's no # in between windows
                     // check windows sections are not contiguous
@@ -166,7 +171,7 @@ fn main() {
                     {
                         
                         // println!("{:?}", record_windows_metadata);
-                        println!("checking... {:?}", spring_row.iter().collect::<String>());
+                        // println!("checking... {:?}", spring_row.iter().collect::<String>());
                         println!("match!");
                         ok_combinations += 1;
                         ok_combinations_cache.push(record_windows_metadata.clone());
@@ -175,79 +180,161 @@ fn main() {
 
                 // move next windows one by one
                 let mut has_reached_max = false;
-                if req_track_to_be_modified.len() == 2{
-                    if req_track_to_be_modified[1].2 + 1 == record.len(){
-                        has_reached_max = true;
-                    }
-                    // reset to starting positions except for the head (last pointer)
-                    req_track_to_be_modified[1].1 += 1;
-                    req_track_to_be_modified[1].2 += 1;
-                    req_track[1].1 = req_track_to_be_modified[1].1;
-                    req_track[1].2 = req_track_to_be_modified[1].2;
-                    
-                    for prev_pointer_shift in 0..1{
-                        req_track_to_be_modified[prev_pointer_shift].1 = req_track[prev_pointer_shift].1;
-                        req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
-                        req_track_to_be_modified[prev_pointer_shift].3 = req_track[prev_pointer_shift+1].1 - req_track_to_be_modified[prev_pointer_shift].2 - 1;
-                    }
-                    // println!("new head shift: {:?}", req_track_to_be_modified);
-
-                } else {
-                    loop{
-                        for next_pointer_shift in 1..=req_track_to_be_modified.len()-1{
-                            // if second to first position end is not next to the next window's start
+                let mut has_reached_max_not_head = false;
+                loop{
+                    for next_pointer_shift in 1..=req_track_to_be_modified.len()-1{ 
+                            // if current windows is not contiguous
                             if req_track_to_be_modified[next_pointer_shift].2 + 1 < req_track_to_be_modified[next_pointer_shift+1].1{
-                                req_track_to_be_modified[next_pointer_shift].1 += 1;
-                                req_track_to_be_modified[next_pointer_shift].2 += 1;
+                                // println!("updating window {} {:?}",next_pointer_shift, req_track_to_be_modified);
+                                // there's room for moving it
+                                loop{
+                                    req_track_to_be_modified[next_pointer_shift].1 += 1;
+                                    req_track_to_be_modified[next_pointer_shift].2 += 1;
+                                    let start = req_track_to_be_modified[next_pointer_shift].1;
+                                    let end = req_track_to_be_modified[next_pointer_shift].2;
+                                    let mut spring_row = record.chars().collect::<Vec<char>>();
+                                    let mut contiguous_pos = 0;
+                                    for spring in 0..record.len(){
+                                        if req_track_to_be_modified.iter().any(|x| x.1 <= spring && spring <= x.2)
+                                            && spring_row[spring] != '.'{
+                                            spring_row[spring] = '$';
+                                        } else if req_track_to_be_modified.iter().any(|x| x.1 <= spring && spring <= x.2) {
+                                            spring_row[spring] = 's';
+                                        }else if spring_row[spring] == '?'{
+                                                spring_row[spring] = '.';
+                                            }
+                                    }
+                                    // println!("{:?}", spring_row.iter().collect::<String>());
+                                    if !record[start..=end].contains("."){
+                                        break;
+                                    }
+
+                                    if end + 1 == req_track_to_be_modified[next_pointer_shift+1].1{
+                                        has_reached_max_not_head = true;
+                                        break;
+                                    }
+                                }
+
+                                
+                                // reset all previous windows to original
                                 for prev_pointer_shift in 0..next_pointer_shift{
+                                    req_track_to_be_modified[prev_pointer_shift].1 = req_track[prev_pointer_shift].1;
+                                    req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
+                                    // if it's the last one (before the one we are analyzing)
                                     if prev_pointer_shift + 1 == next_pointer_shift{
-                                        req_track_to_be_modified[prev_pointer_shift].1 = req_track[prev_pointer_shift].1;
-                                        req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
-                                        req_track_to_be_modified[prev_pointer_shift].3 = req_track_to_be_modified[prev_pointer_shift+1].1 - req_track_to_be_modified[prev_pointer_shift].2 - 1;
+                                        req_track_to_be_modified[prev_pointer_shift].3 = req_track_to_be_modified[next_pointer_shift].1 - req_track[prev_pointer_shift].2 - 1;
                                     } else {
-                                        req_track_to_be_modified[prev_pointer_shift].1 = req_track[prev_pointer_shift].1;
-                                        req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
+                                        // otherwise, reset the distances just like the beginning
                                         req_track_to_be_modified[prev_pointer_shift].3 = req_track[prev_pointer_shift+1].1 - req_track_to_be_modified[prev_pointer_shift].2 - 1;
                                     }
                                 }
-                                println!("new windows: {:?}", req_track_to_be_modified);
+                                // println!("new windows: {:?}", req_track_to_be_modified);
                                 break;
                             }
-                            // if second to last window has topped its available tiles, then move the last one
+                            // if there are only contiguous windows, then the last one can be updated
                             if next_pointer_shift + 1 == req_track_to_be_modified.len()-1{
-                                if req_track_to_be_modified[next_pointer_shift+1].2 + 1 == record.len(){
+                                // println!("updating head {}",next_pointer_shift);
+                                let mut last_window = req_track_to_be_modified.len()-1;
+                                // has last window reached end?
+                                if req_track_to_be_modified[last_window].2 == record.len() - 1{
                                     has_reached_max = true;
                                     break;
                                 }
                                 // reset to starting positions except for the head (last pointer)
-                                req_track_to_be_modified[next_pointer_shift+1].1 += 1;
-                                req_track_to_be_modified[next_pointer_shift+1].2 += 1;
-                                req_track[next_pointer_shift+1].1 = req_track_to_be_modified[next_pointer_shift+1].1;
-                                req_track[next_pointer_shift+1].2 = req_track_to_be_modified[next_pointer_shift+1].2;
+                                loop{
+                                    req_track_to_be_modified[last_window].1 += 1;
+                                    req_track_to_be_modified[last_window].2 += 1;
+                                    req_track[last_window].1 = req_track_to_be_modified[last_window].1;
+                                    req_track[last_window].2 = req_track_to_be_modified[last_window].2;
+                                    let mut start = req_track_to_be_modified[last_window].1;
+                                    let mut end = req_track_to_be_modified[last_window].2;
+                                    if !record[start..=end].contains("."){
+                                        break;
+                                    }
+                                    if req_track_to_be_modified[last_window].2 == record.len() - 1{
+                                        has_reached_max = true;
+                                        break;
+                                    }
+                                }
+
+                                if has_reached_max{
+                                    break;
+                                }
                                 
-                                for prev_pointer_shift in 0..next_pointer_shift+1{
+                                
+                                // reset all the previous positions
+                                for prev_pointer_shift in 0..last_window{
                                     req_track_to_be_modified[prev_pointer_shift].1 = req_track[prev_pointer_shift].1;
                                     req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
-                                    req_track_to_be_modified[prev_pointer_shift].3 = req_track[prev_pointer_shift+1].1 - req_track_to_be_modified[prev_pointer_shift].2 - 1;
+                                    req_track_to_be_modified[prev_pointer_shift].3 = req_track[prev_pointer_shift+1].1 - req_track[prev_pointer_shift].2 - 1;
                                 }
-                                println!("new head shift: {:?}", req_track_to_be_modified);
+                                // println!("new head shift: {:?}", req_track_to_be_modified);
+                                let mut spring_row = record.chars().collect::<Vec<char>>();
+                                let mut contiguous_pos = 0;
+                                for spring in 0..record.len(){
+                                    if req_track_to_be_modified.iter().any(|x| x.1 <= spring && spring <= x.2)
+                                        && spring_row[spring] != '.'{
+                                        spring_row[spring] = '$';
+                                    } else if req_track_to_be_modified.iter().any(|x| x.1 <= spring && spring <= x.2) {
+                                        spring_row[spring] = 's';
+                                    }else if spring_row[spring] == '?'{
+                                            spring_row[spring] = '.';
+                                        }
+                                }
+    
+                                // println!("{:?}", spring_row.iter().collect::<String>());
                                 break;
-                            }       
+                            }  
                         }
+                        
+                        
 
+                        if has_reached_max || has_reached_max_not_head{
+                            break;
+                        }
+                        // println!("{:?}", req_track_to_be_modified);
+                        // skip dist check if there's an invalid window
                         let mut is_windows_dist_valid = true;
-                        for spring in 0..req_track_to_be_modified.len(){
-                            if req_track_to_be_modified.iter().any(|x| x.1 <= spring && spring <= x.2) 
-                            && record.chars().collect::<Vec<char>>()[spring] == '.'{
-                                is_windows_dist_valid = false;
+                        for (i, window) in req_track_to_be_modified.iter().enumerate(){
+                            if i > 1{
+                                // println!("{}: current: {:?} prev: {:?}", i, window, req_track_to_be_modified[i-1]);
+                                let prev_end = req_track_to_be_modified[i-1].2;
+                                let current_start = window.1;
+                                // check if contiguous
+                                if prev_end + 1 == current_start{
+                                    is_windows_dist_valid = false;
+                                    break;
+                                }
+                                let in_between_segm = record[prev_end+1..current_start].to_string();
+                                // check if invalid
+                                if in_between_segm.contains("#"){
+                                    is_windows_dist_valid = false;
+                                    break;
+                                }
                             }
                         }
+                        // if dist is skipeable, then skip it
                         if is_windows_dist_valid == false{
+                            
+                            let mut spring_row = record.chars().collect::<Vec<char>>();
+                            let mut contiguous_pos = 0;
+                            for spring in 0..record.len(){
+                                if req_track_to_be_modified.iter().any(|x| x.1 <= spring && spring <= x.2)
+                                    && spring_row[spring] != '.'{
+                                    spring_row[spring] = '$';
+                                } else if req_track_to_be_modified.iter().any(|x| x.1 <= spring && spring <= x.2) {
+                                    spring_row[spring] = 's';
+                                }else if spring_row[spring] == '?'{
+                                        spring_row[spring] = '.';
+                                    }
+                            }
+
+                            // println!("skipped... {:?}", spring_row.iter().collect::<String>());
                             continue;
                         }
                         break;
-                    }
                 }
+
                 // if all the record has been traversed, end
                 if has_reached_max == true{
                     break;
