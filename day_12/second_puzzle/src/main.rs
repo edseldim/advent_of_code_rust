@@ -112,12 +112,12 @@ fn main() {
 
                     // if for some reason, a position is met again, then skip
                     if ok_combinations_cache.contains(&record_windows_metadata){
-                        // println!("skipped... {:?}", record_windows_metadata);
+                        println!("skipped cache... {:?}", record_windows_metadata);
                         continue;
                     }
 
                     if is_not_valid{
-                        // println!("skipped... {:?}", spring_row.iter().collect::<String>());
+                        println!("invalid... {:?}", spring_row.iter().collect::<String>());
                         break;
                     }
 
@@ -183,56 +183,8 @@ fn main() {
                 let mut has_reached_max_not_head = false;
                 loop{
                     for next_pointer_shift in 1..=req_track_to_be_modified.len()-1{ 
-                            // if current windows is not contiguous
-                            if req_track_to_be_modified[next_pointer_shift].2 + 1 < req_track_to_be_modified[next_pointer_shift+1].1{
-                                // println!("updating window {} {:?}",next_pointer_shift, req_track_to_be_modified);
-                                // there's room for moving it
-                                loop{
-                                    req_track_to_be_modified[next_pointer_shift].1 += 1;
-                                    req_track_to_be_modified[next_pointer_shift].2 += 1;
-                                    let start = req_track_to_be_modified[next_pointer_shift].1;
-                                    let end = req_track_to_be_modified[next_pointer_shift].2;
-                                    let mut spring_row = record.chars().collect::<Vec<char>>();
-                                    let mut contiguous_pos = 0;
-                                    for spring in 0..record.len(){
-                                        if req_track_to_be_modified.iter().any(|x| x.1 <= spring && spring <= x.2)
-                                            && spring_row[spring] != '.'{
-                                            spring_row[spring] = '$';
-                                        } else if req_track_to_be_modified.iter().any(|x| x.1 <= spring && spring <= x.2) {
-                                            spring_row[spring] = 's';
-                                        }else if spring_row[spring] == '?'{
-                                                spring_row[spring] = '.';
-                                            }
-                                    }
-                                    // println!("{:?}", spring_row.iter().collect::<String>());
-                                    if !record[start..=end].contains("."){
-                                        break;
-                                    }
-
-                                    if end + 1 == req_track_to_be_modified[next_pointer_shift+1].1{
-                                        has_reached_max_not_head = true;
-                                        break;
-                                    }
-                                }
-
-                                
-                                // reset all previous windows to original
-                                for prev_pointer_shift in 0..next_pointer_shift{
-                                    req_track_to_be_modified[prev_pointer_shift].1 = req_track[prev_pointer_shift].1;
-                                    req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
-                                    // if it's the last one (before the one we are analyzing)
-                                    if prev_pointer_shift + 1 == next_pointer_shift{
-                                        req_track_to_be_modified[prev_pointer_shift].3 = req_track_to_be_modified[next_pointer_shift].1 - req_track[prev_pointer_shift].2 - 1;
-                                    } else {
-                                        // otherwise, reset the distances just like the beginning
-                                        req_track_to_be_modified[prev_pointer_shift].3 = req_track[prev_pointer_shift+1].1 - req_track_to_be_modified[prev_pointer_shift].2 - 1;
-                                    }
-                                }
-                                // println!("new windows: {:?}", req_track_to_be_modified);
-                                break;
-                            }
                             // if there are only contiguous windows, then the last one can be updated
-                            if next_pointer_shift + 1 == req_track_to_be_modified.len()-1{
+                            if next_pointer_shift == req_track_to_be_modified.len()-1{
                                 // println!("updating head {}",next_pointer_shift);
                                 let mut last_window = req_track_to_be_modified.len()-1;
                                 // has last window reached end?
@@ -284,7 +236,63 @@ fn main() {
     
                                 // println!("{:?}", spring_row.iter().collect::<String>());
                                 break;
-                            }  
+                            } 
+                            // if current windows is not contiguous
+                            if req_track_to_be_modified[next_pointer_shift].2 + 1 < req_track_to_be_modified[next_pointer_shift+1].1{
+                                // println!("updating window {} {:?}",next_pointer_shift, req_track_to_be_modified);
+                                // there's room for moving it
+                                loop{
+                                    req_track_to_be_modified[next_pointer_shift].1 += 1;
+                                    req_track_to_be_modified[next_pointer_shift].2 += 1;
+                                    let start = req_track_to_be_modified[next_pointer_shift].1;
+                                    let end = req_track_to_be_modified[next_pointer_shift].2;
+
+                                    let mut spring_row = record.chars().collect::<Vec<char>>();
+                                    let mut contiguous_pos = 0;
+                                    for spring in 0..record.len(){
+                                        if req_track_to_be_modified.iter().any(|x| x.1 <= spring && spring <= x.2)
+                                            && spring_row[spring] != '.'{
+                                            spring_row[spring] = '$';
+                                        } else if req_track_to_be_modified.iter().any(|x| x.1 <= spring && spring <= x.2) {
+                                            spring_row[spring] = 's';
+                                        }else if spring_row[spring] == '?'{
+                                                spring_row[spring] = '.';
+                                            }
+                                    }
+                                    
+                                    if !spring_row.iter().collect::<String>()[start..=end].contains("s"){
+                                        // println!("{}({},{},{:?}) has stopped at {:?}",next_pointer_shift, start, end, spring_row.iter().collect::<String>()[start..=end].to_string(), spring_row.iter().collect::<String>());
+                                        break;
+                                    }
+
+                                    if end + 1 == req_track_to_be_modified[next_pointer_shift+1].1{
+                                        // println!("{}({},{},{:?}) has ended at {:?}",next_pointer_shift, start, end, spring_row.iter().collect::<String>()[start..=end].to_string(), spring_row.iter().collect::<String>());
+                                        has_reached_max_not_head = true;
+                                        break;
+                                    }
+                                }
+
+                                
+                                // reset all previous windows to original
+                                for prev_pointer_shift in 0..next_pointer_shift{
+                                    req_track_to_be_modified[prev_pointer_shift].1 = req_track[prev_pointer_shift].1;
+                                    req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
+                                    // if it's the last one (before the one we are analyzing)
+                                    if prev_pointer_shift + 1 == next_pointer_shift{
+                                        req_track_to_be_modified[prev_pointer_shift].3 = req_track_to_be_modified[next_pointer_shift].1 - req_track[prev_pointer_shift].2 - 1;
+                                    } else {
+                                        // otherwise, reset the distances just like the beginning
+                                        req_track_to_be_modified[prev_pointer_shift].3 = req_track[prev_pointer_shift+1].1 - req_track_to_be_modified[prev_pointer_shift].2 - 1;
+                                    }
+                                }
+                                // println!("new windows: {:?}", req_track_to_be_modified);
+
+                                if has_reached_max_not_head{
+                                    has_reached_max_not_head = false;
+                                    continue;
+                                }
+                                break;
+                            } 
                         }
                         
                         
@@ -346,3 +354,9 @@ fn main() {
         }
     println!("The total amount of ok combinations is: {}", total_ok_combinations);
 }
+
+/*
+TODO:
+1. Que las cabeceras no tengan ninguna s (sin puntos)
+2. Que las cabeceras cuando lleguen al final, no hagan iteraciones innecesarias. Que si llegan al final, haga continue
+y la otra se mueva hasta que encuentre una ventana sin s (sin puntos) */
