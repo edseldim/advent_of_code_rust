@@ -200,7 +200,12 @@ fn main() {
                                     req_track[last_window].2 = req_track_to_be_modified[last_window].2;
                                     let mut start = req_track_to_be_modified[last_window].1;
                                     let mut end = req_track_to_be_modified[last_window].2;
-                                    if !record[start..=end].contains("."){
+                                    let left_side = record[start-1..=start-1].to_string();
+                                    let right_side = record[end+1..=end+1].to_string();
+                                    if !record[start..=end].contains(".")
+                                        && !left_side.contains("#") 
+                                        && !right_side.contains("#") 
+                                    {
                                         break;
                                     }
                                     if req_track_to_be_modified[last_window].2 == record.len() - 1{
@@ -247,6 +252,21 @@ fn main() {
                                     let start = req_track_to_be_modified[next_pointer_shift].1;
                                     let end = req_track_to_be_modified[next_pointer_shift].2;
 
+                                    let next_start = req_track_to_be_modified[next_pointer_shift+1].1;
+                                    // let current_start = window.1;s
+                                    // check if contiguous
+                                    // if prev_end + 1 == current_start{
+                                    //     is_windows_dist_valid = false;
+                                    //     break;
+                                    // }
+                                    let in_between_segm = record[end+1..next_start].to_string();
+                                    let left_side = record[start-1..=start-1].to_string();
+                                    // check if invalid
+                                    // if in_between_segm.contains("#"){
+                                    //     is_windows_dist_valid = false;
+                                    //     break;
+                                    // }
+
                                     let mut spring_row = record.chars().collect::<Vec<char>>();
                                     let mut contiguous_pos = 0;
                                     for spring in 0..record.len(){
@@ -260,7 +280,10 @@ fn main() {
                                             }
                                     }
                                     
-                                    if !spring_row.iter().collect::<String>()[start..=end].contains("s"){
+                                    if !spring_row.iter().collect::<String>()[start..=end].contains("s")
+                                        && !left_side.contains("#")
+                                        && !in_between_segm.contains("#")
+                                    {
                                         // println!("{}({},{},{:?}) has stopped at {:?}",next_pointer_shift, start, end, spring_row.iter().collect::<String>()[start..=end].to_string(), spring_row.iter().collect::<String>());
                                         break;
                                     }
