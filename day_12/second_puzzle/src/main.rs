@@ -1,6 +1,21 @@
 use std::fs;
 use std::collections::HashMap;
 
+fn get_formatted_record(record: &String, current_requirements: &Vec<(usize, usize, usize, usize)>) -> String{
+    let mut spring_row = record.chars().collect::<Vec<char>>();
+    for spring in 0..record.len(){
+        if current_requirements.iter().any(|x| x.1 <= spring && spring <= x.2)
+            && spring_row[spring] != '.'{
+            spring_row[spring] = '$';
+        } else if current_requirements.iter().any(|x| x.1 <= spring && spring <= x.2) {
+            spring_row[spring] = 's';
+        }else if spring_row[spring] == '?'{
+                spring_row[spring] = '.';
+            }
+    }
+    return spring_row.iter().collect::<String>()
+}
+
 fn memoised_traverse(springs_input: &String, constraints: Vec<(usize, usize, usize, usize)>, cache: &mut HashMap<String, u64>) -> u64{
     let mut ok_combinations = 0;
     println!("constraint at same level: {:?}", constraints);
