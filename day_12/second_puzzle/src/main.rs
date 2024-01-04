@@ -172,7 +172,7 @@ fn main() {
                         
                         // println!("{:?}", record_windows_metadata);
                         // println!("checking... {:?}", spring_row.iter().collect::<String>());
-                        println!("match!");
+                        // println!("match!");
                         ok_combinations += 1;
                         ok_combinations_cache.push(record_windows_metadata.clone());
                     }
@@ -198,6 +198,10 @@ fn main() {
                                     req_track_to_be_modified[last_window].2 += 1;
                                     req_track[last_window].1 = req_track_to_be_modified[last_window].1;
                                     req_track[last_window].2 = req_track_to_be_modified[last_window].2;
+                                    if req_track_to_be_modified[last_window].2 == record.len() - 1{
+                                        has_reached_max = true;
+                                        break;
+                                    }
                                     let mut start = req_track_to_be_modified[last_window].1;
                                     let mut end = req_track_to_be_modified[last_window].2;
                                     let left_side = record[start-1..=start-1].to_string();
