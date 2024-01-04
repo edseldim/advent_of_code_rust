@@ -141,8 +141,143 @@ fn main() {
             GOALS:
             1. Make algo to update positions
              */
-            let mut cache: HashMap<String, u64> = HashMap::new();
-            total_ok_combinations += memoised_traverse(record, req_track, &mut cache);
+            loop {
+                println!("REQUIREMENTS: {:?}", req_track_to_be_modified);
+                total_ok_combinations += memoised_traverse(record, req_track_to_be_modified.clone(), &mut cache);
+
+                // move next windows one by one
+                let mut has_reached_max = false;
+                let mut has_reached_max_not_head = false;
+                loop{
+                    for next_pointer_shift in 1..=req_track_to_be_modified.len()-1{
+
+                            // if there are only contiguous windows, then the last one can be updated
+                            if next_pointer_shift == req_track_to_be_modified.len()-1{
+                                let mut last_window = req_track_to_be_modified.len()-1;
+                                // has last window reached end?
+                                if req_track_to_be_modified[last_window].2 == record.len() - 1{
+                                    has_reached_max = true;
+                                    break;
+                                }
+                                // reset to starting positions except for the head (last pointer)
+                                loop{
+                                    req_track_to_be_modified[last_window].1 += 1;
+                                    req_track_to_be_modified[last_window].2 += 1;
+                                    req_track[last_window].1 = req_track_to_be_modified[last_window].1;
+                                    req_track[last_window].2 = req_track_to_be_modified[last_window].2;
+
+                                    let mut start = req_track_to_be_modified[last_window].1;
+                                    let mut end = req_track_to_be_modified[last_window].2;
+                                    let left_side = record[start-1..=start-1].to_string();
+                                    let right_side = record[end+1..=end+1].to_string();
+
+                                    if !record[start..=end].contains(".")
+                                        && !left_side.contains("#") 
+                                        && !right_side.contains("#") 
+                                    {
+                                        break;
+                                    }
+
+                                    if req_track_to_be_modified[last_window].2 == record.len() - 1{
+                                        has_reached_max = true;
+                                        break;
+                                    }
+                                }
+    
+                                if has_reached_max{
+                                    break;
+                                }
+                                
+                                
+                                // reset all the previous positions
+                                for prev_pointer_shift in 0..last_window{
+                                    req_track_to_be_modified[prev_pointer_shift].1 = req_track[prev_pointer_shift].1;
+                                    req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
+                                    req_track_to_be_modified[prev_pointer_shift].3 = req_track[prev_pointer_shift+1].1 - req_track[prev_pointer_shift].2 - 1;
+                                }
+                                break;
+                            }
+
+                            // if current windows is not contiguous
+                            if req_track_to_be_modified[next_pointer_shift].2 + 1 < req_track_to_be_modified[next_pointer_shift+1].1{
+                                // there's room for moving it
+                                loop{
+                                    req_track_to_be_modified[next_pointer_shift].1 += 1;
+                                    req_track_to_be_modified[next_pointer_shift].2 += 1;
+                                    let start = req_track_to_be_modified[next_pointer_shift].1;
+                                    let end = req_track_to_be_modified[next_pointer_shift].2;
+    
+                                    let next_start = req_track_to_be_modified[next_pointer_shift+1].1;
+                                    let in_between_segm = record[end+1..next_start].to_string();
+                                    let left_side = record[start-1..=start-1].to_string();
+                                    
+                                    if !get_formatted_record(record, &req_track_to_be_modified)[start..=end].contains("s")
+                                        && !left_side.contains("#")
+                                        && !in_between_segm.contains("#")
+                                    {
+                                        break;
+                                    }
+    
+                                    if end + 1 == req_track_to_be_modified[next_pointer_shift+1].1{
+                                        has_reached_max_not_head = true;
+                                        break;
+                                    }
+                                }
+    
+                                // reset all previous windows to original
+                                for prev_pointer_shift in 0..next_pointer_shift{
+                                    req_track_to_be_modified[prev_pointer_shift].1 = req_track[prev_pointer_shift].1;
+                                    req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
+
+                                    // if it's the last one (before the one we are analyzing)
+                                    if prev_pointer_shift + 1 == next_pointer_shift{
+                                        req_track_to_be_modified[prev_pointer_shift].3 = req_track_to_be_modified[next_pointer_shift].1 - req_track[prev_pointer_shift].2 - 1;
+                                    } else {
+                                        // otherwise, reset the distances just like the beginning
+                                        req_track_to_be_modified[prev_pointer_shift].3 = req_track[prev_pointer_shift+1].1 - req_track_to_be_modified[prev_pointer_shift].2 - 1;
+                                    }
+                                }
+    
+                                if has_reached_max_not_head{
+                                    has_reached_max_not_head = false;
+                                    continue;
+                                }
+                                break;
+                            } 
+                        }
+                        
+                        
+    
+                        if has_reached_max || has_reached_max_not_head{
+                            break;
+                        }
+                        
+                        // skip dist check if there's an invalid window
+                        let mut is_windows_dist_valid = true;
+                        for (i, window) in req_track_to_be_modified.iter().enumerate(){
+                            if i > 1{
+
+                                let prev_end = req_track_to_be_modified[i-1].2;
+                                let current_start = window.1;
+                                // check if contiguous
+                                if prev_end + 1 == current_start{
+                                    is_windows_dist_valid = false;
+                                    break;
+                                }
+                                let in_between_segm = record[prev_end+1..current_start].to_string();
+                                // check if invalid
+                                if in_between_segm.contains("#"){
+                                    is_windows_dist_valid = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        // if dist is skipeable, then skip it
+                        if is_windows_dist_valid == false{
+                            // println!("skipped... {:?}", get_formatted_record(record, &req_track_to_be_modified));
+                            continue;
+                        }
 
         }
 
