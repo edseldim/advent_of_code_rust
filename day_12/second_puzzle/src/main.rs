@@ -68,7 +68,7 @@ fn memoised_traverse(springs_input: &String, constraints: Vec<(usize, usize, usi
                 };
                 if retrieved_combination != -1{
                     // ok_combinations = retrieved_combination as u64;
-                    ok_combinations = 0;
+                    ok_combinations += 0;
                 } else {
                     println!("Cache at {:?}: {:?}", current_constraint, cache);
                     ok_combinations += memoised_traverse(&springs_input.to_string(), constraints[1..].to_vec(), cache);
@@ -124,6 +124,7 @@ fn main() {
             let mut current_idx = 0;
             let mut req_copy = requirements[record_num].clone();
             let mut req_track: Vec<(usize,usize,usize, usize)> = vec![];
+            let mut cache: HashMap<String, u64> = HashMap::new();
             // new_starting position
             for (i, req) in req_copy.iter().enumerate(){
                 let mut start = current_idx;
@@ -137,12 +138,14 @@ fn main() {
                 req_track.push((*req, start, end, current_idx - end - 1)); // (requirement, start, end, available tiles)
             }
             println!("starting positions for {} (length: {}) with requirements {:?}: {:?}",record, record.len(), req_copy, req_track);
+            let mut req_track_to_be_modified = req_track.clone();
             /*
             GOALS:
             1. Make algo to update positions
              */
             loop {
                 println!("REQUIREMENTS: {:?}", req_track_to_be_modified);
+                // println!("DIST {:?}", get_formatted_record(record, &req_track_to_be_modified));
                 total_ok_combinations += memoised_traverse(record, req_track_to_be_modified.clone(), &mut cache);
 
                 // move next windows one by one
@@ -165,6 +168,11 @@ fn main() {
                                     req_track_to_be_modified[last_window].2 += 1;
                                     req_track[last_window].1 = req_track_to_be_modified[last_window].1;
                                     req_track[last_window].2 = req_track_to_be_modified[last_window].2;
+
+                                    if req_track_to_be_modified[last_window].2 == record.len() - 1{
+                                        has_reached_max = true;
+                                        break;
+                                    }
 
                                     let mut start = req_track_to_be_modified[last_window].1;
                                     let mut end = req_track_to_be_modified[last_window].2;
@@ -195,6 +203,7 @@ fn main() {
                                     req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
                                     req_track_to_be_modified[prev_pointer_shift].3 = req_track[prev_pointer_shift+1].1 - req_track[prev_pointer_shift].2 - 1;
                                 }
+                                // println!("new head... {:?}", get_formatted_record(record, &req_track_to_be_modified));
                                 break;
                             }
 
@@ -228,7 +237,6 @@ fn main() {
                                 for prev_pointer_shift in 0..next_pointer_shift{
                                     req_track_to_be_modified[prev_pointer_shift].1 = req_track[prev_pointer_shift].1;
                                     req_track_to_be_modified[prev_pointer_shift].2 = req_track[prev_pointer_shift].2;
-
                                     // if it's the last one (before the one we are analyzing)
                                     if prev_pointer_shift + 1 == next_pointer_shift{
                                         req_track_to_be_modified[prev_pointer_shift].3 = req_track_to_be_modified[next_pointer_shift].1 - req_track[prev_pointer_shift].2 - 1;
@@ -242,10 +250,15 @@ fn main() {
                                     has_reached_max_not_head = false;
                                     continue;
                                 }
+
+                                // println!("new pointer switch... {:?}", get_formatted_record(record, &req_track_to_be_modified));
                                 break;
                             } 
                         }
                         
+                        for prev_pointer_shift in 0..req_track_to_be_modified.len()-1{
+                            req_track_to_be_modified[prev_pointer_shift].3 = req_track_to_be_modified[prev_pointer_shift+1].1 - req_track_to_be_modified[prev_pointer_shift].2 - 1;
+                        }
                         
     
                         if has_reached_max || has_reached_max_not_head{
@@ -279,8 +292,15 @@ fn main() {
                             continue;
                         }
 
-        }
+                        break;
+                    }
 
+                // if all the record has been traversed, end
+                if has_reached_max == true{
+                    break;
+                }
+            }
+        }
             
     println!("The total amount of ok combinations is: {}", total_ok_combinations);
 }
