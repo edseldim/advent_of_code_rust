@@ -161,7 +161,7 @@ fn main() {
 
         if left_most_column{
             println!("[WARNING] pattern {} has left most column", pattern_num);
-            // println!("{:?}", reflection_patterns[pattern_num]);
+            column_sum += 1;
             continue
         }
 
@@ -174,7 +174,7 @@ fn main() {
 
         if upper_most_row{
             println!("[WARNING] pattern {} has upper most row", pattern_num);
-            // println!("{:?}", reflection_patterns[pattern_num]);
+            row_sum += 1;
             continue
         }
 
