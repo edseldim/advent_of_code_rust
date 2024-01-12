@@ -30,28 +30,24 @@ fn main() {
     // println!("{:?}", rolling_rocks);
     // println!("{:?}", stopping_rocks);
 
-    let mut updated_rolling_rocks: Vec<(i32, i32)> = rolling_rocks
-                                                    .clone()
-                                                    .iter()
-                                                    .map(|x| (x.0 as i32,x.1 as i32))
-                                                    .collect::<Vec<(i32,i32)>>();
+    let mut updated_rolling_rocks = rolling_rocks.clone();
     for (i, rock) in rolling_rocks.iter().enumerate(){
-        let mut new_column = rock.0 as i32;
+        let mut new_column = rock.0;
         for pos in 1..=rock.0{
             if !stopping_rocks
                     .iter()
                     .any(|stopping_rock| stopping_rock.0 == (rock.0 - pos) && stopping_rock.1 == rock.1)
                 && !updated_rolling_rocks
                     .iter()
-                    .any(|rolling_rock| rolling_rock.0 == (rock.0 - pos) as i32 && rolling_rock.1 == rock.1 as i32){
-                new_column = rock.0 as i32 - pos as i32;
+                    .any(|rolling_rock| rolling_rock.0 == (rock.0 - pos) && rolling_rock.1 == rock.1){
+                new_column = rock.0 - pos;
                 continue;
             }
                 break
         }
-        updated_rolling_rocks[i] = (new_column as i32, rock.1 as i32);
+        updated_rolling_rocks[i] = (new_column, rock.1);
     }
     println!("{:?}", updated_rolling_rocks);
-    println!("{:?}", updated_rolling_rocks.iter().map(|x| file_lines.len() as i32-x.0 as i32).sum::<i32>());
+    println!("{:?}", updated_rolling_rocks.iter().map(|x| file_lines.len()-x.0).sum::<usize>());
 
 }
