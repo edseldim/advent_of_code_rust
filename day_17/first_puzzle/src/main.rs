@@ -1,6 +1,7 @@
 use std::fs;
 use heapq::PriorityQueue;
 use std::cmp::Reverse;
+use std::collections::HashSet;
 
 fn get_step_counter(current_head_counter: usize, 
                 current_direction: String, 
@@ -57,7 +58,7 @@ fn main() {
 
     // initiate queues
     let score_fn = |node: &(isize, isize, String, isize, isize)| Reverse(node.4);
-    let mut visited_nodes: Vec<(isize, isize, String, isize)> = vec![]; // x, y, direction, direction_count
+    let mut visited_nodes: HashSet<(isize, isize, String, isize)> = HashSet::new(); // x, y, direction, direction_count
     let mut current_queue = PriorityQueue::new(score_fn); // x, y, direction, dist, heat sum
 
     // get starting nodes
@@ -73,16 +74,16 @@ fn main() {
             break;
         }
         
-        if visited_nodes.iter().any(|node| *node == (current_node_head.0, current_node_head.1, current_node_head.2.clone(), current_node_head.3)){
+        if visited_nodes.contains(&(current_node_head.0, current_node_head.1, current_node_head.2.clone(), current_node_head.3)){
             println!("skipped");
             continue;
         }
-        visited_nodes.push((current_node_head.0, current_node_head.1, current_node_head.2.clone(), current_node_head.3)); 
+        visited_nodes.insert((current_node_head.0, current_node_head.1, current_node_head.2.clone(), current_node_head.3)); 
 
         let child_neighbours = get_neighbours(&current_node_head, &heat_matrix);
         for child_child_node in child_neighbours{
             // if !current_queue.iter().any(|node| *node == child_child_node)
-            if !visited_nodes.iter().any(|node| *node == (child_child_node.0, child_child_node.1, child_child_node.2.clone(), child_child_node.3)){
+            if !visited_nodes.contains(&(child_child_node.0, child_child_node.1, child_child_node.2.clone(), child_child_node.3)){
                 current_queue.push(child_child_node.clone());
             }
         }
