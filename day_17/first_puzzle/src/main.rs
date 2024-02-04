@@ -1,4 +1,6 @@
 use std::fs;
+use heapq::PriorityQueue;
+use std::cmp::Reverse;
 
 fn get_step_counter(current_head_counter: usize, 
                 current_direction: String, 
@@ -54,32 +56,39 @@ fn main() {
                                 .collect::<Vec<Vec<isize>>>();
 
     // initiate queues
+    let score_fn = |node: &(isize, isize, String, isize, isize)| Reverse(node.4);
     let mut visited_nodes: Vec<(isize, isize, String, isize)> = vec![]; // x, y, direction, direction_count
-    let mut current_queue: Vec<(isize, isize, String, isize, isize)> = vec![]; // x, y, direction, dist, heat sum
+    let mut current_queue = PriorityQueue::new(score_fn); // x, y, direction, dist, heat sum
 
     // get starting nodes
     let mut current_node_head = (0, 0, "".to_string(), 0, 0);
+    let mut iter = 0;
     current_queue.push(current_node_head.clone());
 
-    while current_queue.len() > 0{
-        current_node_head = current_queue.remove(0);
-        
+    while !current_queue.peek().is_none(){
+        current_node_head = current_queue.pop().unwrap();
+        println!("iteration {} min: {}", iter, current_node_head.4);
         // end condition
         if (current_node_head.0 as usize, current_node_head.1 as usize) == (heat_matrix.len()-1, heat_matrix[heat_matrix.len()-1].len()-1){
             break;
         }
         
         if visited_nodes.iter().any(|node| *node == (current_node_head.0, current_node_head.1, current_node_head.2.clone(), current_node_head.3)){
+            println!("skipped");
             continue;
         }
         visited_nodes.push((current_node_head.0, current_node_head.1, current_node_head.2.clone(), current_node_head.3)); 
 
         let child_neighbours = get_neighbours(&current_node_head, &heat_matrix);
         for child_child_node in child_neighbours{
-            current_queue.push(child_child_node.clone());
+            // if !current_queue.iter().any(|node| *node == child_child_node)
+            if !visited_nodes.iter().any(|node| *node == (child_child_node.0, child_child_node.1, child_child_node.2.clone(), child_child_node.3)){
+                current_queue.push(child_child_node.clone());
+            }
         }
 
-        current_queue.sort_unstable_by_key(|node| node.4);
+        // current_queue.sort_unstable_by_key(|node| node.4);
+        iter += 1;
     }
     println!("min heat: {:?}",current_node_head.4);
 }
