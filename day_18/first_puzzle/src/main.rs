@@ -40,8 +40,7 @@ fn main() {
     let mut vector = (0,0);
     for (i, metadata) in vectors_metadata.iter().enumerate(){
         let unit_vector = get_unit_vector_from_direction(&metadata.direction);
-        // vector = (unit_vector.0*metadata.value as isize+vector.0, unit_vector.1*metadata.value as isize+vector.1);
-        vector = (unit_vector.0*metadata.value as isize, unit_vector.1*metadata.value as isize);
+        vector = (unit_vector.0*metadata.value as isize+vector.0, unit_vector.1*metadata.value as isize+vector.1);
         vectors.push(vector);
     }
 
@@ -51,8 +50,8 @@ fn main() {
             area_in_poligon += vectors[i].0 * vectors[i-1].1 - vectors[i-1].0 * vectors[i].1;
     }
     area_in_poligon = (area_in_poligon).abs()/2;
-    let inner_points = area_in_poligon - ((vectors.len()/2) as isize) + 1;
+    let border = vectors_metadata.iter().map(|vector| vector.value as isize).sum::<isize>();
+    let inner_points = area_in_poligon + ((border/2) as isize) + 1;
     println!("{:?}", vectors);
-    println!("inner points {}", inner_points);
-    println!("total area {}", inner_points + vectors_metadata.iter().map(|vector| vector.value as isize).sum::<isize>());
+    println!("total dug area {}", inner_points);
 }
