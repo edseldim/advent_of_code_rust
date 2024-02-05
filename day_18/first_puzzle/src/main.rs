@@ -37,9 +37,11 @@ fn main() {
                                     .collect::<Vec<VecMetadata>>();
     println!("{:?}", vectors_metadata);
     let mut vectors: Vec<(isize, isize)> = vec![];
+    let mut vector = (0,0);
     for (i, metadata) in vectors_metadata.iter().enumerate(){
         let unit_vector = get_unit_vector_from_direction(&metadata.direction);
-        let vector = (unit_vector.0*metadata.value as isize, unit_vector.1*metadata.value as isize);
+        // vector = (unit_vector.0*metadata.value as isize+vector.0, unit_vector.1*metadata.value as isize+vector.1);
+        vector = (unit_vector.0*metadata.value as isize, unit_vector.1*metadata.value as isize);
         vectors.push(vector);
     }
 
