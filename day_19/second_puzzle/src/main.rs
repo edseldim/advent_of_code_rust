@@ -24,6 +24,24 @@ struct Workflow{
     default: String
 }
 
+fn traverse_workflows(current_workflow: &Workflow, current_wf_path: &Vec<String>, valid_wf: Vec<Vec<Condition>> ) -> Vec<Condition>{
+    let current_wf_path = current_wf_path.clone()
+    current_wf_path.push(current_workflow.name.clone());
+    for condition in &current_workflow.conditions{
+        if current_wf_path
+        if condition.next_workflow == "A"{
+            current_wf_path.push("A")
+            return "A"
+        } else {
+            current_wf_path.push("R")
+            return "R"
+        }
+        wf = workflows_processed.iter().filter(|workflow| workflow.name == condition.next_workflow).nth(0).unwrap();
+        traverse_workflows(wf, current_wf_path);
+    }
+
+}
+
 fn parse_parts(parts: &Vec<String>) -> Vec<Part>{
     let mut parts_processed: Vec<Part> = vec![];
     for part_str in parts{
@@ -135,7 +153,7 @@ fn main() {
     println!("Workflows: {:?}\n", workflows_processed);
     for part in &parts_processed{
         println!("Starting with parts: {:?}", part);
-        let mut workflow_struct = workflows_processed.iter().filter(|workflow| workflow.name == "in").nth(0).unwrap();
+        let mut workflow_struct = workflows_processed.iter().filter(|workflow| workflow.name == "kn").nth(0).unwrap();
         let mut next_workflow = check_condition(part, &workflow_struct);
         println!("{:?}", next_workflow);
         while !["A".to_string(),"R".to_string()].contains(&next_workflow){
@@ -148,6 +166,4 @@ fn main() {
             accepted_parts.push(part.clone());
         }
     }
-
-    println!("Total ratings: {}", accepted_parts.iter().map(|part| part.x + part.m + part.a + part.s).sum::<usize>())
 }
