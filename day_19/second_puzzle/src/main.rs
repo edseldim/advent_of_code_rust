@@ -1,4 +1,6 @@
 use std::fs;
+use std::collections::HashMap;
+use std::cmp;
 
 #[derive(Debug)]
 #[derive(Clone)]
@@ -22,24 +24,6 @@ struct Workflow{
     name: String,
     conditions: Vec<Condition>,
     default: String
-}
-
-fn traverse_workflows(current_workflow: &Workflow, current_wf_path: &Vec<String>, valid_wf: Vec<Vec<Condition>> ) -> Vec<Condition>{
-    let current_wf_path = current_wf_path.clone()
-    current_wf_path.push(current_workflow.name.clone());
-    for condition in &current_workflow.conditions{
-        if current_wf_path
-        if condition.next_workflow == "A"{
-            current_wf_path.push("A")
-            return "A"
-        } else {
-            current_wf_path.push("R")
-            return "R"
-        }
-        wf = workflows_processed.iter().filter(|workflow| workflow.name == condition.next_workflow).nth(0).unwrap();
-        traverse_workflows(wf, current_wf_path);
-    }
-
 }
 
 fn parse_parts(parts: &Vec<String>) -> Vec<Part>{
@@ -131,6 +115,69 @@ fn check_condition(part: &Part, workflow: &Workflow) -> String{
     workflow.default.clone()
 }
 
+fn count(ranges: &mut HashMap<char, (usize, usize)>, 
+        name: &String, 
+        workflows_processed: &Vec<Workflow>) -> isize{
+    if name == "R"{
+        return 0
+    } else if name == "A"{
+        let mut product = 1;
+        for (_, (lo, hi)) in ranges.iter(){
+            product *= hi - lo + 1
+        }
+        return product as isize
+    }
+
+    let conditions = &workflows_processed.iter()
+                    .filter(|workflow| workflow.name == *name)
+                    .nth(0).unwrap().conditions;
+
+    let default = &workflows_processed.iter()
+                    .filter(|workflow| workflow.name == *name)
+                    .nth(0).unwrap().default;
+
+    let mut total = 0;
+    let mut exit_sucessfully = false;
+    for condition in conditions{
+        let part = condition.part;
+        let cmp = condition.comparison;
+        let number = condition.number;
+        let next_workflow = &condition.next_workflow;
+        
+        let part_range = ranges[&part];
+        let mut true_side = (0,0);
+        let mut false_side = (0,0);
+        if cmp == '<'{
+            true_side = (part_range.0, cmp::min(number - 1, part_range.1));
+            false_side = (cmp::max(number, part_range.0), part_range.1);
+        } else {
+            true_side = (cmp::max(number + 1, part_range.0), part_range.1);
+            false_side = (part_range.0, cmp::min(number, part_range.1));
+        }
+
+        if true_side.0 <= true_side.1{
+            let mut new_ranges = ranges.clone();
+            new_ranges.entry(part).and_modify(|range| *range = true_side);
+            total += count(&mut new_ranges, next_workflow, workflows_processed);
+        }
+
+        if false_side.0 <= false_side.1{
+            // ranges[&part] = false_side;
+            ranges.entry(part).and_modify(|range| *range = false_side);
+            exit_sucessfully = true;
+        } else {
+            break;
+        }
+    }
+
+    if exit_sucessfully{
+        total += count(ranges, &default, &workflows_processed);
+    }
+
+    total
+
+}
+
 fn main() {
     let mut workflows: Vec<String> = vec![];
     let mut parts: Vec<String> = vec![];
@@ -149,21 +196,11 @@ fn main() {
     let parts_processed = parse_parts(&parts);
     let workflows_processed = parse_conditions(&workflows);
     let mut accepted_parts: Vec<Part> = vec![];
-    println!("Parts: {:?}\n", parts_processed);
-    println!("Workflows: {:?}\n", workflows_processed);
-    for part in &parts_processed{
-        println!("Starting with parts: {:?}", part);
-        let mut workflow_struct = workflows_processed.iter().filter(|workflow| workflow.name == "kn").nth(0).unwrap();
-        let mut next_workflow = check_condition(part, &workflow_struct);
-        println!("{:?}", next_workflow);
-        while !["A".to_string(),"R".to_string()].contains(&next_workflow){
-            workflow_struct = workflows_processed.iter().filter(|workflow| workflow.name == next_workflow).nth(0).unwrap();
-            next_workflow = check_condition(part, &workflow_struct);
-            println!("{:?}", next_workflow);
-        }
-        // println!("{:?}", next_workflow);
-        if next_workflow == "A".to_string(){
-            accepted_parts.push(part.clone());
-        }
-    }
+    let mut ranges: HashMap<char, (usize, usize)> = HashMap::new();
+    ranges.insert('x',(1,4000));
+    ranges.insert('m',(1,4000));
+    ranges.insert('a',(1,4000));
+    ranges.insert('s',(1,4000));
+    let total = count(&mut ranges, &"in".to_string(), &workflows_processed);
+    println!("{}",total)
 }
