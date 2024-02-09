@@ -1,65 +1,56 @@
 use std::fs;
 use std::collections::HashMap;
 
-// true: high; false: low
 #[derive(Debug)]
+#[derive(Clone)]
 struct FlipFlop{
     name: String,
-    state: bool
+    device_type: char,
+    outputs: Vec<String>,
+    memory: bool
 }
 
-impl FlipFlop{
-    fn update_state_by_current(&mut self, current: bool) -> bool{
-        if current{
-            return false // do not process the flipflop
-        } else {
-            self.state = !self.state; // set the opposite: if off then send true (high) otherwise send false (low)
-            return true // do process the flipflop
-        }
-    }
-}
 #[derive(Debug)]
 #[derive(Clone)]
 struct Conjunction{
     name: String,
-    connections: HashMap<String, bool>
+    device_type: char,
+    outputs: Vec<String>,
+    memory: HashMap<String, bool>
+}
+
+impl FlipFlop{
+    fn new(name: &String, _type: &char, outputs: &Vec<String>) -> Self{
+        FlipFlop{
+            name: name.clone(),
+            device_type: _type.clone(),
+            outputs: outputs.clone(),
+            memory: false
+        }
+    }
 }
 
 impl Conjunction{
-    fn get_output_current(&self) -> bool{
-        if self.connections.values().all(|device_state| *device_state){
-            return false // return false (low) if they are all true (high)
-        } else {
-            return true // return true (high) if they are not all true
+    fn new(name: &String, _type: &char, outputs: &Vec<String>) -> Self{
+        Conjunction{
+            name: name.clone(),
+            device_type: _type.clone(),
+            outputs: outputs.clone(),
+            memory: HashMap::new()
         }
     }
-
-    fn update_conn_state(&mut self, flipflop_name: &String, input_current: &bool){
-        self.connections.entry(flipflop_name.to_string()).and_modify(|ff| *ff = *input_current); // modify connections state table
-    }
-
-}
-#[derive(Debug)]
-struct Broadcaster{
-    name: String, 
-    current_to_broadcast: bool
-}
-#[derive(Debug)]
-struct Instruction{
-    input: String,
-    output: Vec<String>
 }
 
 #[derive(Debug)]
-enum DeviceTypes{
+#[derive(Clone)]
+enum ModuleTypes{
     FlipFlop(FlipFlop),
     Conjunction(Conjunction),
-    Broadcaster(Broadcaster),
 }
 
 fn main() {
-    let mut lines: Vec<Instruction> = vec![];
-    let mut devices: HashMap<String, DeviceTypes> = HashMap::new();
+    let mut modules: HashMap<String, ModuleTypes> = HashMap::new();
+    let mut broadcaster_targets: Vec<String> = vec![];
     let file_path = "src/puzzle_data.txt";
     for line in fs::read_to_string(file_path).unwrap().lines(){
         let input = line.split("->").nth(0).unwrap().to_string();
@@ -68,61 +59,104 @@ fn main() {
                                 .split(",")
                                 .map(|device| device.trim().to_string())
                                 .collect::<Vec<String>>();
-        lines.push(Instruction{
-            input: input.trim().to_string(),
-            output: out.clone()
-        });
 
-        
-
-        if input.chars().nth(0).unwrap() == '&'{
-            devices.entry(input.trim().to_string()).or_insert(
-                DeviceTypes::Conjunction(Conjunction{
-                    name: input.trim().to_string(),
-                    connections: HashMap::new()
-                }));
-        } else if input.chars().nth(0).unwrap() == '%'{
-            devices.entry(input.trim().to_string()).or_insert(
-                DeviceTypes::FlipFlop(FlipFlop{
-                    name: input.trim().to_string(),
-                    state: false
-                })
-            );
+        if input.trim().to_string() == "broadcaster"{
+            broadcaster_targets = out;
         } else {
-            devices.entry(input.trim().to_string()).or_insert(
-                DeviceTypes::Broadcaster(Broadcaster{
-                name: input.trim().to_string(),
-                current_to_broadcast: false
-                })
-            );
+            if input.chars().nth(0).unwrap() == '%'{
+                modules.insert(input.strip_prefix("%").unwrap().trim().to_string(), ModuleTypes::FlipFlop(FlipFlop::new(&(input.strip_prefix("%").unwrap().trim().to_string()), 
+                                                            &'%',
+                                                            &out)));
+            } else if input.chars().nth(0).unwrap() == '&'{
+                modules.insert(input.strip_prefix("&").unwrap().trim().to_string(), ModuleTypes::Conjunction(Conjunction::new(&(input.strip_prefix("&").unwrap().trim().to_string()), 
+                                                                &'&',
+                                                                &out)));
+            }
+            
         }
     }
 
-    for instruction in &lines{
-        for device_str in instruction.output.iter(){
-            if devices.keys().any(|key| key.contains(device_str)){
-                let device_name = devices.keys().filter(|key| key.contains(device_str)).nth(0).unwrap();
-                if device_name.chars().nth(0).unwrap() == '&'{
-                    
-                    let mut conjunction: &mut Conjunction = match devices.get_mut(&device_name.to_string()).unwrap()
-                    {
-                        DeviceTypes::Conjunction(cj) => cj,
-                        _ => unreachable!()
-                    };
-                    conjunction.connections.entry(instruction.input.to_string()).or_insert(false);
+    let mut mut_modules = modules.clone();
+    for (name, module) in &modules{
+        match module{
+            ModuleTypes::FlipFlop(fp) => {
+                for output in &fp.outputs{
+                    if modules.contains_key(output){
+                        if let ModuleTypes::Conjunction(cj) = mut_modules.get_mut(output).unwrap(){
+                            cj.memory.entry(name.to_string()).or_insert(false);
+                        }
+                    }
+                }
+            },
+            ModuleTypes::Conjunction(cj_in) => {
+                for output in &cj_in.outputs{
+                    if modules.contains_key(output){
+                        if let ModuleTypes::Conjunction(cj) = mut_modules.get_mut(output).unwrap(){
+                            cj.memory.entry(name.to_string()).or_insert(false);
+                        }
+                    }
                 }
             }
         }
     }
-
-    println!("{:?}",lines);
-    println!("{:?}",devices);
-    let mut exec_queue: Vec<String> = vec![];
+    println!("{:?}",mut_modules);
+    let mut exec_queue: Vec<(String, String, bool)> = vec![];
     let mut low = 0;
     let mut high = 0;
     for _ in 0..1000{
         low += 1;
-        w
-    }
+        for device in &broadcaster_targets{
+            exec_queue.push(("broadcaster".to_string(), device.to_string(), false));
+        }
+        while exec_queue.len() > 0{
+            let (origin, target, pulse);
+            (origin, target, pulse) = exec_queue.remove(0);
+            
+            if pulse == false{
+                low += 1;
+            } else {
+                high += 1;
+            }
 
+            if !mut_modules.contains_key(&target){
+                continue;
+            }
+
+            match mut_modules.get_mut(&target).unwrap() {
+                ModuleTypes::FlipFlop(ff) => {
+                    if pulse == false{
+                        if ff.memory == false {
+                            ff.memory = true;
+                        } else {
+                            ff.memory = false;
+                        }
+
+                        let mut outgoing = false;
+
+                        if ff.memory {
+                            outgoing = true;
+                        } else {
+                            outgoing = false;
+                        }
+
+                        for device in &ff.outputs{
+                            exec_queue.push((ff.name.to_string(), device.to_string(), outgoing))
+                        }
+ 
+                    }
+                },
+                ModuleTypes::Conjunction(cj) => {
+                    cj.memory.entry(origin).and_modify(|device_status| *device_status = pulse);
+                    let mut outgoing = true;
+                    if cj.memory.values().all(|device_status| *device_status){
+                        outgoing = false
+                    }
+                    for device in &cj.outputs{
+                        exec_queue.push((cj.name.to_string(), device.to_string(), outgoing))
+                    }
+                }
+            }
+        }
+    }
+    println!("{} {} {}", low, high, low * high)
 }
