@@ -12,3 +12,5 @@ Also:
 
 1. Backend programming
 2. Systems-level projects
+
+Note: From day 19 part 2 on, the solutions are ports from Python solutions made by https://github.com/hyper-neutrino/advent-of-code/
